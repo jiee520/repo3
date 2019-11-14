@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:dubbo="http://code.alibabatech.com/schema/dubbo" xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://code.alibabatech.com/schema/dubbo
+        http://code.alibabatech.com/schema/dubbo/dubbo.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+    <!--开启组件扫描-->
+    <context:component-scan base-package="com.itheima"/>
+    <!--2.引入外部资源配置文件-->
+    <context:property-placeholder location="classpath:druid.properties"/>
+    <!--3.配置数据源-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.pwd}"/>
+    </bean>
+    <!--4.配置数据库操作：JdbcTemplate-->
+    <!--mybatis框架交由spring管理-->
+    <!--获取SqlSessionFactoryBean对象-->
+    <bean id="sessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!--注入数据源-->
+        <property name="dataSource" ref="dataSource"/>
+        <!--配置别名-->
+        <property name="typeAliasesPackage" value="com.itheima.domain"/>
+    </bean>
+
+    <!--Mapper扫描器获取Mapper代理对象-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!--基本接口扫描的包-->
+        <property name="basePackage" value="com.itheima.mapper"/>
+    </bean>
+    <!--dubbo相关配置-->
+    <!--1.给应用起一个名称 :  必须是唯一的-->
+    <dubbo:application name="dubbo_vue_provider"/>
+    <!--2.配置关联注册中心 : 本地注册中心-->
+    <dubbo:registry address="zookeeper://127.0.0.1:2181"/>
+    <!--3.配置协议和端口号-->
+    <dubbo:protocol name="dubbo" port="20881"/>
+    <!--4.注解扫描 : @Service发布服务-->
+    <dubbo:annotation package="com.itheima.service"/>
+
+    <!--声明事务管理器-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <!--事务管理-->
+    <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"/>
+    <!--proxy-target-class="true"  强制使用cglib代理方式-->
+</beans>
